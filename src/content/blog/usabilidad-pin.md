@@ -1,143 +1,67 @@
 ---
-title: 'Aplicando conceptos de usabilidad para mejorar la experiencia en Buda.com'
+title: 'Un día cualquiera como desarrollador (¿y diseñador?) en Buda.com'
 description: ''
 pubDate: 'Mar 18 2024'
-heroImage: '/blog-placeholder-1.jpg'
+heroImage: '/blog-placeholder-3.jpg'
 ---
 
-### Contexto
+Este post está también en 🔗 [el blog de Buda.com](https://blog.buda.com/un-dia-cualquiera-como-desarrollador-y-disenador-en-buda-com/)
 
-Cuando un usuario con PIN de seguridad activado solicita un envío a través de la app, en ciertas ocasiones le mostramos la siguiente advertencia, que lamentablemente no es muy útil.
+---
 
-<aside>
-🤷 ¿Cuál es mi dispositivo aprobador? ¿Y si no lo tengo qué hago? ¿Por qué me habla de un <i>retiro</i> si estoy en el flujo de <i>envío</i>? ¿La opción <i>ir al home</i> de qué me sirve? ¿Por qué dice <i>van en camino</i> si me falta un paso?
-</aside>
+Cuando hablamos de diseño, muchos piensan en colores, íconos y pantallas bonitas. Pero diseñar también significa entender a fondo los problemas del usuario y encontrar la mejor manera de solucionarlos. Y a veces, quienes escribimos el código somos los mismos que tenemos que pensar cómo hacerlo más claro, más útil y más humano. Este es un ejemplo de cómo una pequeña confusión en la app llevó a una gran mejora... y cómo el camino para solucionarlo fue mucho más que solo escribir líneas de código.
 
-Acá les cuento cómo lo mejoré y aprovecho de asociarlo a las [🔗 10 heurísticas de usabilidad de Nielsen](https://www.nngroup.com/articles/ten-usability-heuristics/) (lectura muy recomendada), que son reglas generales para un correcto diseño de interfaces de usuario. Idealmente revisen el link antes de seguir leyendo, es cortito, aunque de todas maneras voy a ir mencionando las heurísticas acá mismo. De ahora en adelante uso el emoji ☝️ para hacer referencia al artículo.
+La app de [Buda.com](http://buda.com/) entrega la opción de usar un PIN de 6 dígitos para aprobar envíos de criptomonedas de manera rápida y segura. Implementar una funcionalidad así no es fácil, sobre todo considerando que en algo tan sensible debe siempre primar la seguridad. Por eso cuando lo lanzamos decidimos empezar con una versión inicial, y luego ir identificando mejoras a partir de los comentarios de nuestros usuarios. Así nos dimos cuenta de que había un mensaje en particular que resultaba confuso.
 
-Disclaimer: no soy diseñador, así que tampoco me crean taanto tanto lo que digo acá.
+Cuando un usuario con PIN de seguridad activado solicitaba un envío a través de la app, en ciertas ocasiones le mostrábamos la siguiente advertencia, que lamentablemente no era muy útil:
 
 <div style="text-align: center;">
   <img src="/pin-1.png" alt="Advertencia PIN antes" style="max-width: 300px;" />
 </div>
 
-### Estados del PIN
+🤷 ¿Cuál es mi dispositivo aprobador? ¿Y si no lo tengo qué hago? ¿Por qué me habla de un *retiro* si estoy en el flujo de *envío*? ¿La opción *ir al home* de qué me sirve? ¿Por qué dice *van en camino* si aún me falta un paso?
 
-Para entender cómo mejorarla hay que entender los distintos estados del PIN. Después de que el usuario activa su PIN, éste puede estar:
+Acá te cuento cómo mejoré el mensaje basándome en las [🔗 10 heurísticas de usabilidad de Nielsen](https://www.nngroup.com/articles/ten-usability-heuristics/). Éstas son reglas generales para un correcto diseño de interfaces de usuario. Te recomiendo revisar el link antes de seguir leyendo, es cortito, aunque de todas maneras voy a ir mencionando las heurísticas acá mismo. De ahora en adelante uso el emoji ☝️ para referirme al artículo.
 
-1. **Habilitado** si la sesión en la app (más concretamente la API key) con la que lo activó aún está activa. Esto puede corresponder a alguno de los siguientes casos:
+Antes de empezar, quiero mencionar que soy desarrollador, no diseñador, así que siéntete en todo el derecho de cuestionar lo que digo. Pero sí trabajo muy cerca del diseño de productos digitales, me interesa mucho el tema, y lo he estudiado bastante.
+
+### Cómo mejorar el mensaje al usuario
+
+☝️ En primer lugar vamos a aplicar la heurística 9: Ayuda a los usuarios a reconocer, diagnosticar y recuperarse de errores. *Los mensajes de error deben expresarse en un lenguaje sencillo (sin códigos de error), indicar con precisión el problema y sugerir de forma constructiva una solución.*
+
+Basándonos en esto, el mensaje debería comunicar:
+
+1. La situación actual: *El PIN que tienes configurado ya no es válido*, que puede ser por dos motivos:
     
-    a) El usuario sigue usando el mismo dispositivo (caso esperado o <i>happy path</i>)
+    a) *Activaste el PIN en otro dispositivo.*
     
-    b) O bien el usuario inició sesión en un segundo dispositivo ⚠️
+    b) O bien *Se perdió la sesión en que activaste el PIN.*
     
-    A esto se refiere la advertencia con <i>ir a tu dispositivo aprobador</i>. El usuario está en un segundo dispositivo pero el PIN está en el primero.
+    Con “perder la sesión” me refiero a distintos casos en que se pierde el acceso sin que hayas pinchado el botón *Cerrar sesión*. Puede ser por ejemplo si desinstalaste la app. 
     
-    c) O bien el usuario "perdió" la sesión en ese dispositivo y luego volvió a iniciarla ⚠️
+    Este caso no es tan simple de identificar, porque lo único que sabemos es que el usuario no ha usado esa sesión en un cierto tiempo.
     
-    "Perder" la sesión se refiere a distintos casos en que se pierde el acceso sin haber pinchado el botón <i>Cerrar sesión</i>. Puede ser por ejemplo con el botón <i>Olvidé mi PIN</i> o desinstalando la app.
+2. Y la acción requerida de parte del usuario para cada uno de los casos:
     
-    Por motivos técnicos en esos casos no tenemos cómo comprobar que la sesión ya no está activa. Lo que hacemos es asumir que se perdió luego de que pasa un cierto tiempo de desuso.
+    a) *Abre la app en el otro dispositivo para poder aprobar el envío.*
     
-2. **No habilitado** si la sesión en la app dejó de estar activa. Puede ser porque:
-    
-    d) El usuario cerró sesión correctamente con el botón <i>Cerrar sesión</i>.
-    
-    e) O bien porque pasó el tiempo máximo de desuso y marcamos automáticamente esa sesión como inactiva.
+    b) O bien *Vuelve a configurar el PIN de seguridad.*
     
 
-Los casos marcados con ⚠️ son los que hay que abordar en el mensaje <i>Para aprobar este retiro debes ir a tu dispositivo aprobador.</i>
+Lo ideal sería detectar si es el caso a) o el b), y mostrar un mensaje correspondiente. Pero como mencioné, hacer esta distinción no es tan sencillo, así que para una primera versión opté por una solución más fácil de implementar.
 
-### Cómo mejorar el mensaje <i>Para aprobar este retiro debes ir a tu dispositivo aprobador</i>
+Sumado a esto tenemos que asegurarnos de mantener la consistencia usando la palabra *envío* en vez de la palabra *retiro*. 
 
-Basándome en la lectura recomendada, determiné que el mensaje debería comunicar:
+☝️ Esto responde a la heurística 4: Coherencia y estándares. *Los usuarios no deberían tener que preguntarse si diferentes palabras, situaciones o acciones significan lo mismo. Sigue las convenciones de la plataforma y del sector.*
 
-1. La situación actual: <i>El PIN que tienes configurado no es válido</i>, que puede deberse a alguno de los casos marcados con ⚠️:
-    
-    a) <i>Activaste el PIN en otro dispositivo.</i>
-    
-    b) O bien <i>Iniciaste una nueva sesión en este dispositivo.</i>
-    
-2. La acción requerida del usuario:
-    
-    a) <i>Abre la app en el otro dispositivo para poder aprobar el envío.</i>
-    
-    b) O bien <i>Vuelve a configurar el PIN de seguridad.</i>
+Y también tenemos que cambiar el título *Van en camino* para reflejar mejor el hecho de que aún falta un paso.
 
-<aside>
-<b>Esto responde a la heurística 9: Help Users Recognize, Diagnose, and Recover from Errors</b>
-</aside>
+☝️Esto responde a la heurística 1: Visibilidad del estado del sistema. *El diseño debe mantener siempre informados a los usuarios sobre lo que está sucediendo.*
 
-Además en el caso b) una vez configurado el PIN nuevamente se cancelan automáticamente los envíos asociados al PIN anterior. Es necesario explicar esto claramente y mencionar que debe volver a solicitar el envío.
+### Así quedó finalmente
 
-<aside>
-<b>Esto responde a la heurística 1: Visibility of System Status. The design should always keep users informed about what is going on, through appropriate feedback within a reasonable amount of time.</b>
-</aside>
-
-También debemos asegurarnos de usar la palabra <i>envío</i> en vez de la palabra <i>retiro</i>.
-
-<aside>
-<b>Esto responde a la heurística 4: Consistency and Standards. Users should not have to wonder whether different words, situations, or actions mean the same thing.</b>
-</aside>
-
-### Cambios implementados
-
-Con los nuevos cambios la pantalla queda así:
+Tomando todo esto en cuenta mejoré el título, el mensaje de advertencia y reemplacé la acción sugerida por el botón principal. Ahora el usuario entiende mucho mejor qué está pasando, y cómo solucionarlo:
 
 <div style="text-align: center;">
   <img src="/pin-2.png" alt="Advertencia PIN después" style="max-width: 300px;" />
-</div>
-
-
-Y luego de completar el flujo de configuración del nuevo PIN se ve este mensaje:
-
-<div style="text-align: center;">
-  <img src="/pin-3.png" alt="Advertencia PIN después 2" style="max-width: 300px;" />
-</div>
-
-### Soluciones descartadas (por ahora al menos)
-
-Decidí no ofrecer la acción de <i>Ir al home</i> que estaba antes, porque no soluciona nada y ya hay una X en la esquina de la pantalla que hace eso mismo.
-
-Además consideré agregar esto al mensaje:
-
-> Para más información revisa [este artículo](https://soporte.buda.com/es/articles/7257832-todo-sobre-el-pin-de-seguridad-para-retiros-cripto) o escríbenos a soporte@buda.com
-> 
-
-<aside>
-<b>Esto respondería a la heurística 10: Help and Documentation: It's best if the system doesn't need any additional explanation. However, it may be necessary to provide documentation to help users understand how to complete their tasks.</b>
-</aside>
-
-Pero creo que es mucho texto. El mensaje <i>sin</i> eso último ya está medio largo (que hace menos probable que el usuario lo lea) y en el iPhone SE cabe justo:
-
-<div style="text-align: center;">
-  <img src="/pin-4.png" alt="Advertencia PIN en celular pequeño" style="max-width: 300px;" />
-</div>
-
-<aside>
-<b>Finalmente primó la heurística 8: Aesthetic and Minimalist Design: Interfaces should not contain information that is irrelevant or rarely needed. Every extra unit of information in an interface competes with the relevant units of information and diminishes their relative visibility.</b>
-</aside>
-
-Además hay dos cambios que dejarían todo aún más claro para el usuario, pero que por motivos más prácticos descarté por el momento:
-
-1. Mostrar distintos mensajes para las dos situaciones posibles. Implicaría cambios mayores para poder diferenciarlas.
-
-<aside>
-<b>Esto mejoraría aún más la heurística 9: Help Users Recognize, Diagnose, and Recover from Errors</b>
-</aside>
-
-1. Mostrar la advertencia <i>al inicio</i> del flujo de retiro cripto, para ayudar al usuario a darse cuenta del problema y resolverlo <i>antes</i> de crear el retiro. Descartado porque en ese momento aún no se sabe si es que el backend va a pedir PIN para ese retiro, implicaría cambios mayores.
-
-<aside>
-<b>Esto respondería a la heurística 5: Error Prevention. Good error messages are important, but the best designs carefully prevent problems from occurring in the first place. Either eliminate error-prone conditions, or check for them and present users with a confirmation option before they commit to the action.</b>
-</aside>
-
-## ¿Te interesó el tema?
-
-[10 Usability Heuristics for User Interface Design](https://www.nngroup.com/articles/ten-usability-heuristics/)
-
-En el mismo artículo hay hartos links y recursos para indagar más. Por ejemplo este mini torpedo con las heurísticas:
-
-<div style="text-align: center;">
-  <img src="/pin-5.png" alt="Heurísticas" style="max-width: 300px;" />
 </div>
